@@ -1,10 +1,9 @@
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { supabase } from "../services/supabaseClient"
-import { useNavigate } from "react-router-dom"
 
 function DealerDashboard(){
 
-const navigate = useNavigate()
+const [cars,setCars] = useState([])
 
 const [brand,setBrand] = useState("")
 const [model,setModel] = useState("")
@@ -12,74 +11,45 @@ const [year,setYear] = useState("")
 const [price,setPrice] = useState("")
 const [image,setImage] = useState("")
 const [description,setDescription] = useState("")
-const [cars,setCars] = useState([])
 
-// 🔐 check dealer access
 useEffect(()=>{
-checkAccess()
+loadCars()
 },[])
 
-async function checkAccess(){
+//////////////////////////////////////////////////////
+// LOAD CARS
+//////////////////////////////////////////////////////
 
-const { data } = await supabase.auth.getUser()
-
-if(!data.user){
-navigate("/login", { state: { from: "/dealer" } })
-return
-}
-
-const { data: userData } = await supabase
-.from("users")
-.select("role")
-.eq("id", data.user.id)
-.single()
-
-if(userData.role !== "dealer"){
-alert("Only approved dealers can access")
-navigate("/")
-return
-}
-
-loadCars()
-
-}
-
-// load cars
 async function loadCars(){
 
 const { data } = await supabase
 .from("cars")
 .select("*")
 
-setCars(data)
-
+setCars(data || [])
 }
 
-// add car
-async function handleSubmit(e){
+//////////////////////////////////////////////////////
+// ADD CAR
+//////////////////////////////////////////////////////
+
+async function handleAddCar(e){
 
 e.preventDefault()
 
-if(!brand || !model || !price){
-alert("Fill all required fields")
-return
-}
-
-const { error } = await supabase.from("cars").insert([
-{
-brand,
-model,
-year: parseInt(year),
-price: parseInt(price),
-image,
-description
-}
+const { data, error } = await supabase
+.from("cars")
+.insert([
+{ brand, model, year, price, image, description }
 ])
+.select()
 
 if(error){
 alert(error.message)
 }else{
-alert("Car added successfully")
+
+// add instantly to UI
+setCars(prev => [...prev, data[0]])
 
 // clear form
 setBrand("")
@@ -89,58 +59,140 @@ setPrice("")
 setImage("")
 setDescription("")
 
-loadCars()
+alert("Car added successfully")
 }
 
 }
+
+//////////////////////////////////////////////////////
+// DELETE CAR
+//////////////////////////////////////////////////////
+
+async function deleteCar(id){
+
+const { error } = await supabase
+.from("cars")
+.delete()
+.eq("id", id)
+
+if(error){
+alert(error.message)
+}else{
+
+// instant UI update
+setCars(prev => prev.filter(car => car.id !== id))
+
+}
+}
+
+//////////////////////////////////////////////////////
 
 return(
 
-<div className="max-w-6xl mx-auto p-10">
+<div className="min-h-screen bg-gray-100 p-10">
 
-<h1 className="text-3xl font-bold mb-6">
-Dealer Dashboard
+{/* HEADER (NO MESSAGES BUTTON HERE) */}
+<div className="mb-10">
+<h1 className="text-3xl font-bold">
+Dealer Panel
 </h1>
+<p className="text-gray-500 text-sm">
+Manage your car listings easily
+</p>
+</div>
 
-{/* FORM */}
-<form onSubmit={handleSubmit} className="space-y-3">
+{/* ADD CAR FORM */}
+<div className="bg-white p-6 rounded-xl shadow mb-10">
 
-<input value={brand} placeholder="Brand" onChange={(e)=>setBrand(e.target.value)} className="border p-2 w-full"/>
-<input value={model} placeholder="Model" onChange={(e)=>setModel(e.target.value)} className="border p-2 w-full"/>
-<input value={year} placeholder="Year" onChange={(e)=>setYear(e.target.value)} className="border p-2 w-full"/>
-<input value={price} placeholder="Price" onChange={(e)=>setPrice(e.target.value)} className="border p-2 w-full"/>
-<input value={image} placeholder="Image URL" onChange={(e)=>setImage(e.target.value)} className="border p-2 w-full"/>
+<h2 className="text-xl font-semibold mb-4">
+Add New Car
+</h2>
 
-<textarea value={description} placeholder="Description" onChange={(e)=>setDescription(e.target.value)} className="border p-2 w-full"/>
+<form onSubmit={handleAddCar} className="grid grid-cols-2 gap-4">
 
-<button className="bg-blue-600 text-white px-4 py-2 rounded">
+<input
+placeholder="Brand"
+value={brand}
+onChange={(e)=>setBrand(e.target.value)}
+className="border p-2 rounded"
+/>
+
+<input
+placeholder="Model"
+value={model}
+onChange={(e)=>setModel(e.target.value)}
+className="border p-2 rounded"
+/>
+
+<input
+placeholder="Year"
+value={year}
+onChange={(e)=>setYear(e.target.value)}
+className="border p-2 rounded"
+/>
+
+<input
+placeholder="Price"
+value={price}
+onChange={(e)=>setPrice(e.target.value)}
+className="border p-2 rounded"
+/>
+
+<input
+placeholder="Image URL"
+value={image}
+onChange={(e)=>setImage(e.target.value)}
+className="border p-2 rounded col-span-2"
+/>
+
+<textarea
+placeholder="Description"
+value={description}
+onChange={(e)=>setDescription(e.target.value)}
+className="border p-2 rounded col-span-2"
+/>
+
+<button className="bg-green-600 text-white py-2 rounded col-span-2 hover:bg-green-700 transition">
 Add Car
 </button>
 
 </form>
 
-{/* LISTINGS */}
-<h2 className="text-2xl font-bold mt-10">
+</div>
+
+{/* MY CARS */}
+<h2 className="text-xl font-semibold mb-4">
 My Listings
 </h2>
 
-<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+<div className="grid md:grid-cols-3 gap-6">
 
 {cars.map(car=>(
-<div key={car.id} className="border p-4 rounded shadow">
+<div key={car.id} className="bg-white rounded-xl shadow overflow-hidden hover:shadow-lg transition">
 
 <img
 src={car.image}
-className="w-full h-40 object-cover rounded"
+className="w-full h-40 object-cover"
 />
 
-<p className="font-bold mt-2">
+<div className="p-4">
+
+<p className="font-semibold text-lg">
 {car.brand} {car.model}
 </p>
 
-<p className="text-green-600 font-semibold">
+<p className="text-green-600 font-bold">
 ${car.price}
 </p>
+
+<button
+onClick={()=>deleteCar(car.id)}
+className="mt-3 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+>
+Delete
+</button>
+
+</div>
 
 </div>
 ))}
@@ -148,9 +200,7 @@ ${car.price}
 </div>
 
 </div>
-
 )
-
 }
 
 export default DealerDashboard

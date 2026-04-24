@@ -15,7 +15,6 @@ async function loadUser(){
 const { data } = await supabase.auth.getUser()
 
 if(data.user){
-
 const { data: userData } = await supabase
 .from("users")
 .select("role")
@@ -29,7 +28,6 @@ setRole(userData.role)
 
 }
 
-// 🔥 ROLE SWITCH (for demo)
 async function handleRoleChange(e){
 
 const newRole = e.target.value
@@ -46,30 +44,30 @@ await supabase
 
 return(
 
-<div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-200">
+<div className="min-h-screen bg-gray-50">
 
-<div className="max-w-7xl mx-auto px-10">
+<div className="max-w-7xl mx-auto px-8">
 
-{/* TOP BAR */}
-<div className="flex justify-between items-center pt-6">
+{/* 🔥 HEADER */}
+<div className="flex justify-between items-center py-6">
 
-<h1 className="text-xl font-bold text-blue-600">
+<div className="flex items-center gap-2">
+<div className="w-8 h-8 bg-indigo-600 rounded-lg"></div>
+<h1 className="text-lg font-semibold">
 MotoVerse
 </h1>
+</div>
 
 <div className="flex items-center gap-4">
 
 <p className="text-sm text-gray-500">
-Logged in as:
-<span className="text-blue-600 font-semibold ml-1 capitalize">
-{role}
-</span>
+Logged in as <span className="text-indigo-600 font-medium capitalize">{role}</span>
 </p>
 
 <select
 value={role}
 onChange={handleRoleChange}
-className="border px-3 py-1 rounded"
+className="border border-gray-200 px-3 py-1 rounded-md text-sm"
 >
 <option value="customer">Customer</option>
 <option value="dealer">Dealer</option>
@@ -80,24 +78,24 @@ className="border px-3 py-1 rounded"
 
 </div>
 
-{/* HERO */}
-<div className="grid md:grid-cols-2 gap-16 items-center py-20">
+{/* 🔥 HERO */}
+<div className="grid md:grid-cols-2 gap-12 items-center py-16">
 
 <div>
 
-<h1 className="text-5xl font-extrabold text-gray-900 leading-tight">
-Drive Your <span className="text-blue-600">Dream Car</span>
+<h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
+Drive Your <span className="text-indigo-600">Dream Car</span>
 </h1>
 
-<p className="mt-6 text-gray-600 text-lg max-w-lg">
-MotoVerse helps you explore cars, connect with dealers, and book test drives — all in one seamless experience.
+<p className="mt-5 text-gray-600 max-w-md">
+Explore cars, connect with dealers, and book test drives — all in one seamless experience.
 </p>
 
 <div className="mt-8 flex gap-4">
 
 <Link
 to="/cars"
-className="bg-blue-600 text-white px-8 py-3 rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition"
+className="bg-indigo-600 text-white px-6 py-3 rounded-lg shadow hover:shadow-lg hover:-translate-y-1 transition"
 >
 Explore Cars
 </Link>
@@ -105,18 +103,18 @@ Explore Cars
 {role === "dealer" && (
 <Link
 to="/dealer"
-className="bg-white border px-8 py-3 rounded-xl shadow hover:shadow-lg hover:-translate-y-1 transition"
+className="border px-6 py-3 rounded-lg hover:bg-gray-100 transition"
 >
-Dealer Dashboard
+Dashboard
 </Link>
 )}
 
 {role === "admin" && (
 <Link
 to="/admin"
-className="bg-white border px-8 py-3 rounded-xl shadow hover:shadow-lg hover:-translate-y-1 transition"
+className="border px-6 py-3 rounded-lg hover:bg-gray-100 transition"
 >
-Admin Panel
+Admin
 </Link>
 )}
 
@@ -129,62 +127,68 @@ Admin Panel
 
 <img
 src="https://images.unsplash.com/photo-1503376780353-7e6692767b70"
-className="rounded-3xl shadow-2xl"
+className="rounded-2xl shadow-xl"
 />
 
-<div className="absolute -z-10 top-10 left-10 w-72 h-72 bg-blue-300 rounded-full blur-3xl opacity-30"></div>
+<div className="absolute -z-10 top-10 left-10 w-64 h-64 bg-indigo-200 rounded-full blur-3xl opacity-30"></div>
 
 </div>
 
 </div>
 
-{/* DIVIDER */}
-<div className="w-full h-px bg-gray-200 my-16"></div>
+{/* 🔥 WHY SECTION (FIXED CLEAN GRID) */}
+<div className="py-20">
 
-{/* WHY SECTION */}
-<div className="bg-gradient-to-b from-white to-gray-50 py-24 rounded-3xl">
-
-<h2 className="text-4xl font-bold text-center mb-14">
+<h2 className="text-3xl font-bold text-center mb-12">
 Why MotoVerse?
 </h2>
 
-<div className="grid md:grid-cols-3 gap-10 px-10">
+<div className="grid md:grid-cols-3 gap-8">
 
-<div className="group bg-white p-8 rounded-2xl shadow-md border border-gray-100 hover:shadow-2xl transition duration-300 hover:-translate-y-2">
+<div className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-lg transition">
 
-<h3 className="text-xl font-semibold flex items-center gap-2">
-<span className="text-2xl group-hover:scale-110 transition">🚗</span>
+<div className="w-12 h-12 flex items-center justify-center bg-indigo-100 rounded-lg mb-4 text-xl">
+🚗
+</div>
+
+<h3 className="text-lg font-semibold">
 Smart Browsing
 </h3>
 
-<p className="text-gray-500 mt-3">
-Explore cars with detailed information and clean listings.
+<p className="text-gray-500 mt-2 text-sm">
+Explore cars with clear details and smooth navigation.
 </p>
 
 </div>
 
-<div className="group bg-white p-8 rounded-2xl shadow-md border border-gray-100 hover:shadow-2xl transition duration-300 hover:-translate-y-2">
+<div className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-lg transition">
 
-<h3 className="text-xl font-semibold flex items-center gap-2">
-<span className="text-2xl group-hover:scale-110 transition">⚡</span>
-Instant Booking
+<div className="w-12 h-12 flex items-center justify-center bg-yellow-100 rounded-lg mb-4 text-xl">
+⚡
+</div>
+
+<h3 className="text-lg font-semibold">
+Quick Booking
 </h3>
 
-<p className="text-gray-500 mt-3">
-Book test drives easily with just one click.
+<p className="text-gray-500 mt-2 text-sm">
+Book test drives instantly without delays.
 </p>
 
 </div>
 
-<div className="group bg-white p-8 rounded-2xl shadow-md border border-gray-100 hover:shadow-2xl transition duration-300 hover:-translate-y-2">
+<div className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-lg transition">
 
-<h3 className="text-xl font-semibold flex items-center gap-2">
-<span className="text-2xl group-hover:scale-110 transition">💬</span>
+<div className="w-12 h-12 flex items-center justify-center bg-green-100 rounded-lg mb-4 text-xl">
+💬
+</div>
+
+<h3 className="text-lg font-semibold">
 Direct Connect
 </h3>
 
-<p className="text-gray-500 mt-3">
-Connect with dealers instantly without delays.
+<p className="text-gray-500 mt-2 text-sm">
+Communicate directly with dealers easily.
 </p>
 
 </div>
@@ -193,22 +197,22 @@ Connect with dealers instantly without delays.
 
 </div>
 
-{/* CTA */}
-<div className="text-center py-24">
+{/* 🔥 CTA */}
+<div className="bg-indigo-600 text-white text-center py-20 rounded-3xl mb-16">
 
-<h2 className="text-4xl font-bold">
+<h2 className="text-3xl font-bold">
 Start Your Journey Today
 </h2>
 
-<p className="text-gray-500 mt-4">
-Find your perfect car in just a few clicks.
+<p className="mt-3 text-indigo-100">
+Find your perfect car in minutes.
 </p>
 
 <Link
 to="/cars"
-className="inline-block mt-8 bg-blue-600 text-white px-10 py-4 rounded-2xl text-lg shadow-lg hover:shadow-2xl hover:scale-105 transition duration-300"
+className="inline-block mt-6 bg-white text-indigo-600 px-8 py-3 rounded-lg font-medium hover:scale-105 transition"
 >
-Get Started →
+Explore Cars →
 </Link>
 
 </div>

@@ -1,75 +1,116 @@
-import { Routes, Route, useLocation } from "react-router-dom"
+import { Routes, Route } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { supabase } from "./services/supabaseClient"
 
-import Sidebar from "./components/SideBar"
+import CustomerLayout from "./layouts/CustomerLayout"
+import DealerLayout from "./layouts/DealerLayout"
+import AdminLayout from "./layouts/AdminLayout"
 
 import Home from "./pages/Home"
 import BrowseCars from "./pages/BrowseCars"
-import CarDetails from "./pages/CarDetails"
 import DealerDashboard from "./pages/DealerDashboard"
 import AdminDashboard from "./pages/AdminDashboard"
+import Messages from "./pages/Messages"   // ✅ ADD THIS
 import Login from "./pages/Login"
 import Register from "./pages/Register"
-import Messages from "./pages/Messages"
 
 function App(){
 
 const [user,setUser] = useState(null)
-const location = useLocation()
+const [role,setRole] = useState(null)
 
 useEffect(()=>{
-checkUser()
-
-supabase.auth.onAuthStateChange((_event, session) => {
-setUser(session?.user || null)
-})
-
+loadUser()
 },[])
 
-async function checkUser(){
+async function loadUser(){
+
 const { data } = await supabase.auth.getUser()
+
+if(data.user){
 setUser(data.user)
+
+const { data: userData } = await supabase
+.from("users")
+.select("role")
+.eq("id", data.user.id)
+.single()
+
+setRole(userData?.role)
 }
 
-const showSidebar =
-location.pathname === "/dealer" ||
-location.pathname === "/admin" ||
-location.pathname === "/messages"
+}
 
 return(
 
-<div className="flex">
-
-{/* ✅ Sidebar only for dashboards */}
-{user && showSidebar && <Sidebar/>}
-
-{/* ✅ Main content */}
-<div className={`flex-1 min-h-screen bg-gray-100 ${showSidebar ? "" : "w-full"}`}>
-
 <Routes>
 
-{!user ? (
+{/* NOT LOGGED IN */}
+{!user && (
 <>
 <Route path="*" element={<Login/>}/>
 <Route path="/register" element={<Register/>}/>
 </>
-) : (
+)}
+
+{/* CUSTOMER */}
+{user && role === "customer" && (
 <>
-<Route path="/" element={<Home/>}/>
-<Route path="/cars" element={<BrowseCars/>}/>
-<Route path="/car/:id" element={<CarDetails/>}/>
-<Route path="/dealer" element={<DealerDashboard/>}/>
-<Route path="/admin" element={<AdminDashboard/>}/>
-<Route path="/messages" element={<Messages/>}/>
+<Route path="/" element={
+<CustomerLayout>
+<Home/>
+</CustomerLayout>
+}/>
+
+<Route path="/cars" element={
+<CustomerLayout>
+<BrowseCars/>
+</CustomerLayout>
+}/>
+
+<Route path="/messages" element={
+<CustomerLayout>
+<Messages/>
+</CustomerLayout>
+}/>
+</>
+)}
+
+{/* DEALER */}
+{user && role === "dealer" && (
+<>
+<Route path="/" element={
+<DealerLayout>
+<DealerDashboard/>
+</DealerLayout>
+}/>
+
+<Route path="/messages" element={
+<DealerLayout>
+<Messages/>
+</DealerLayout>
+}/>
+</>
+)}
+
+{/* ADMIN */}
+{user && role === "admin" && (
+<>
+<Route path="/" element={
+<AdminLayout>
+<AdminDashboard/>
+</AdminLayout>
+}/>
+
+<Route path="/messages" element={
+<AdminLayout>
+<Messages/>
+</AdminLayout>
+}/>
 </>
 )}
 
 </Routes>
-
-</div>
-
-</div>
 )
 }
 
