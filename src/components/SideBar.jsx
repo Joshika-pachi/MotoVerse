@@ -1,12 +1,14 @@
 import { Link, useLocation } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { supabase } from "../services/supabaseClient"
+import { getTestDrivesForDealer } from "../services/testDriveService"
 
 function Sidebar(){
 
 const [user, setUser] = useState(null)
 const [role, setRole] = useState(null)
 const [collapsed, setCollapsed] = useState(false)
+const [pendingTD, setPendingTD] = useState(0)
 const location = useLocation()
 
 useEffect(()=>{
@@ -26,7 +28,18 @@ async function getUser(){
       .select("role")
       .eq("id", data.user.id)
       .single()
-    setRole(userData ? userData.role : "customer")
+    const userRole = userData ? userData.role : "customer"
+    setRole(userRole)
+
+    // Load pending test drive count for dealers
+    if(userRole === "dealer"){
+      const { data: cars } = await supabase.from("cars").select("id")
+      if(cars && cars.length > 0){
+        const { data: drives } = await getTestDrivesForDealer(cars.map(c => c.id))
+        const pending = (drives || []).filter(d => d.status === "pending").length
+        setPendingTD(pending)
+      }
+    }
   }
 }
 
@@ -54,7 +67,8 @@ const dealerItems = [
   {
     to: "/dealer",
     label: "Dashboard",
-    icon: "M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"
+    icon: "M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z",
+    badge: pendingTD > 0 ? String(pendingTD) : undefined
   },
   {
     to: "/messages",

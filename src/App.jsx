@@ -15,6 +15,9 @@ import Messages from "./pages/Messages"
 import Login from "./pages/Login"
 import Register from "./pages/Register"
 import Profile from "./pages/Profile"
+import PrivacyPolicy from "./pages/PrivacyPolicy"
+import TermsOfService from "./pages/TermsOfService"
+import Support from "./pages/Support"
 
 function App(){
 
@@ -65,6 +68,9 @@ return (
 <Routes>
 <Route path="*" element={<Login/>}/>
 <Route path="/register" element={<Register/>}/>
+<Route path="/privacy" element={<PrivacyPolicy/>}/>
+<Route path="/terms" element={<TermsOfService/>}/>
+<Route path="/support" element={<Support/>}/>
 </Routes>
 )
 }
@@ -74,6 +80,11 @@ return (
 return(
 
 <Routes>
+
+{/* PUBLIC LEGAL PAGES — accessible regardless of role */}
+<Route path="/privacy" element={<PrivacyPolicy/>}/>
+<Route path="/terms" element={<TermsOfService/>}/>
+<Route path="/support" element={<Support/>}/>
 
 {/* CUSTOMER */}
 <Route path="/" element={<CustomerLayout/>}>

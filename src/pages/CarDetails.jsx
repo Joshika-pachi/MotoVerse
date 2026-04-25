@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { supabase } from "../services/supabaseClient"
+import { bookTestDrive, getExistingBooking } from "../services/testDriveService"
 
 function CarDetails(){
 
@@ -8,9 +9,27 @@ const { id } = useParams()
 const navigate = useNavigate()
 const [car,setCar] = useState(null)
 const [saved, setSaved] = useState(false)
+const [currentUser, setCurrentUser] = useState(null)
 
+// Test drive state
+const [showTDModal, setShowTDModal] = useState(false)
+const [tdDate, setTdDate] = useState("")
+const [tdTime, setTdTime] = useState("morning")
+const [tdBooking, setTdBooking] = useState(false)
+const [tdBooked, setTdBooked] = useState(false)
+const [tdError, setTdError] = useState("")
+const [existingBooking, setExistingBooking] = useState(null)
 
-useEffect(()=>{ loadCar() },[])
+useEffect(()=>{ loadCar(); loadUser() },[])
+
+async function loadUser(){
+  const { data } = await supabase.auth.getUser()
+  if(data.user){
+    setCurrentUser(data.user)
+    const booking = await getExistingBooking(data.user.id, id)
+    if(booking) setExistingBooking(booking)
+  }
+}
 
 async function loadCar(){
   const { data } = await supabase
@@ -19,6 +38,55 @@ async function loadCar(){
     .eq("id", id)
     .single()
   setCar(data)
+}
+
+async function handleBookTestDrive(){
+  setTdError("")
+
+  // Guard: must be logged in
+  if(!currentUser?.id){
+    setTdError("You must be logged in to book a test drive.")
+    return
+  }
+
+  // Guard: date required
+  if(!tdDate){
+    setTdError("Please select a preferred date.")
+    return
+  }
+
+  // Guard: date must be in the future (at least tomorrow)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const selected = new Date(tdDate)
+  selected.setHours(0, 0, 0, 0)
+  if(selected <= today){
+    setTdError("Please select a future date (tomorrow or later).")
+    return
+  }
+
+  // Guard: no weekends
+  const dayOfWeek = selected.getDay()
+  if(dayOfWeek === 0 || dayOfWeek === 6){
+    setTdError("Test drives are only available Monday – Friday.")
+    return
+  }
+
+  setTdBooking(true)
+
+  // Combine date + time slot into a timestamp string
+  const timeMap = { morning: "10:00:00", afternoon: "14:00:00", evening: "17:00:00" }
+  const dateTime = `${tdDate}T${timeMap[tdTime]}`
+
+  const { data, error } = await bookTestDrive(currentUser.id, id, dateTime)
+  if(error){
+    setTdError(error.message || "Booking failed. Please try again.")
+  } else {
+    setExistingBooking(data)
+    setTdBooked(true)
+    setTimeout(() => { setShowTDModal(false); setTdBooked(false) }, 2500)
+  }
+  setTdBooking(false)
 }
 
 
@@ -259,9 +327,31 @@ return(
       </div>
       <div className="flex gap-3">
 
+        {/* Test Drive Button */}
+        {existingBooking ? (
+          <div className="flex items-center gap-2 px-6 py-3.5 rounded-2xl font-semibold text-sm"
+            style={{background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.3)', color:'#22c55e'}}
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+            </svg>
+            Test Drive Requested
+          </div>
+        ) : (
+          <button
+            onClick={()=>setShowTDModal(true)}
+            className="btn-primary flex items-center gap-2 px-6 py-3.5 rounded-2xl font-semibold text-sm"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99z"/>
+            </svg>
+            Schedule Test Drive
+          </button>
+        )}
+
         <button
           onClick={()=>navigate(`/messages?car=${car.id}`)}
-          className="btn-ghost px-8 py-4 rounded-2xl font-semibold text-sm flex items-center gap-2"
+          className="btn-ghost px-6 py-3.5 rounded-2xl font-semibold text-sm flex items-center gap-2"
           style={{border:'1px solid var(--border-gold)', color:'var(--gold-primary)'}}
         >
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -271,7 +361,7 @@ return(
         </button>
         <button
           onClick={()=>navigate('/cars')}
-          className="btn-ghost px-8 py-4 rounded-2xl font-semibold text-sm"
+          className="btn-ghost px-6 py-3.5 rounded-2xl font-semibold text-sm"
         >
           Browse More
         </button>
@@ -280,7 +370,114 @@ return(
 
   </div>
 
+  {/* ===== TEST DRIVE MODAL ===== */}
+  {showTDModal && (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-6"
+      style={{background:'rgba(0,0,0,0.75)', backdropFilter:'blur(8px)'}}
+      onClick={(e)=>{ if(e.target===e.currentTarget) setShowTDModal(false) }}
+    >
+      <div className="glass-card rounded-3xl p-8 w-full max-w-md gold-border animate-fade-up" style={{boxShadow:'0 40px 80px rgba(0,0,0,0.6), var(--glow-gold-sm)'}}>
 
+        {/* Modal header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 gold-gradient rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5" fill="#080808" viewBox="0 0 24 24">
+                <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99z"/>
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-lg font-bold" style={{color:'var(--text-primary)'}}>Schedule Test Drive</h3>
+              <p className="text-xs" style={{color:'var(--text-muted)'}}>{car.brand} {car.model} · {car.year}</p>
+            </div>
+          </div>
+          <button onClick={()=>setShowTDModal(false)} className="btn-ghost w-9 h-9 rounded-xl flex items-center justify-center">
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+          </button>
+        </div>
+
+        {tdBooked ? (
+          <div className="text-center py-8">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{background:'rgba(34,197,94,0.15)', border:'1px solid rgba(34,197,94,0.3)'}}>
+              <svg className="w-8 h-8" fill="#22c55e" viewBox="0 0 24 24">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+              </svg>
+            </div>
+            <h4 className="text-xl font-bold mb-2" style={{color:'var(--text-primary)'}}>Booking Requested!</h4>
+            <p className="text-sm" style={{color:'var(--text-secondary)'}}>Your test drive request has been sent. The dealer will confirm shortly.</p>
+          </div>
+        ) : (
+          <div className="space-y-5">
+
+            {/* Date picker */}
+            <div className="form-group">
+              <label>Preferred Date</label>
+              <input
+                type="date"
+                id="td-date"
+                min={new Date().toISOString().split('T')[0]}
+                value={tdDate}
+                onChange={e=>setTdDate(e.target.value)}
+                className="input-luxury w-full px-4 py-3.5 rounded-xl"
+              />
+            </div>
+
+            {/* Time slot */}
+            <div className="form-group">
+              <label>Preferred Time</label>
+              <div className="grid grid-cols-3 gap-3">
+                {[{v:'morning',l:'Morning',s:'10:00 AM'},{v:'afternoon',l:'Afternoon',s:'2:00 PM'},{v:'evening',l:'Evening',s:'5:00 PM'}].map(t=>(
+                  <button
+                    key={t.v}
+                    onClick={()=>setTdTime(t.v)}
+                    className="py-3 rounded-xl text-center transition-all duration-200"
+                    style={{
+                      background: tdTime===t.v ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.03)',
+                      border: tdTime===t.v ? '1px solid var(--border-gold-hover)' : '1px solid var(--border-subtle)',
+                      color: tdTime===t.v ? 'var(--gold-primary)' : 'var(--text-secondary)'
+                    }}
+                  >
+                    <div className="text-xs font-bold">{t.l}</div>
+                    <div className="text-xs mt-0.5" style={{color:'var(--text-muted)'}}>{t.s}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Info note */}
+            <div className="flex items-start gap-2 p-3 rounded-xl" style={{background:'rgba(212,175,55,0.04)', border:'1px solid var(--border-gold)'}}>
+              <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="var(--gold-primary)" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+              </svg>
+              <p className="text-xs leading-relaxed" style={{color:'var(--text-muted)'}}>Your request will be sent to the dealer for confirmation. Status updates appear in your Profile.</p>
+            </div>
+
+            {/* Error */}
+            {tdError && (
+              <p className="text-sm text-center" style={{color:'#ef4444'}}>{tdError}</p>
+            )}
+
+            {/* Submit */}
+            <button
+              onClick={handleBookTestDrive}
+              disabled={tdBooking}
+              className="btn-primary w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2"
+              style={{opacity: tdBooking ? 0.7 : 1, cursor: tdBooking ? 'not-allowed' : 'pointer'}}
+            >
+              {tdBooking ? (
+                <><span className="loading-ring" style={{width:'20px',height:'20px',borderWidth:'2px'}}/> Requesting...</>
+              ) : (
+                <><svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>Confirm Request</>
+              )}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )}
 
 </div>
 )

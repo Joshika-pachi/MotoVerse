@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { supabase } from "../services/supabaseClient"
+import { getMyTestDrives, cancelMyTestDrive } from "../services/testDriveService"
 
 function Profile(){
 
@@ -15,6 +16,10 @@ function Profile(){
 
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState("")
+
+  // Test drives
+  const [testDrives, setTestDrives] = useState([])
+  const [tdLoading, setTdLoading] = useState(false)
 
   useEffect(()=>{
     setMounted(true)
@@ -36,6 +41,11 @@ function Profile(){
       setFullName(userData?.full_name || "")
       setPhone(userData?.phone || "")
 
+      // Load test drives
+      setTdLoading(true)
+      const { data: drives } = await getMyTestDrives(data.user.id)
+      setTestDrives(drives || [])
+      setTdLoading(false)
     }
     setLoading(false)
   }
@@ -66,6 +76,21 @@ function Profile(){
   async function handleSignOut(){
     await supabase.auth.signOut()
     window.location.href = "/"
+  }
+
+  async function handleCancelDrive(id){
+    const { error } = await cancelMyTestDrive(id)
+    if(!error){
+      setTestDrives(prev => prev.map(d => d.id === id ? {...d, status:'cancelled'} : d))
+    }
+  }
+
+  function formatDateTime(dateStr){
+    if(!dateStr) return "N/A"
+    return new Date(dateStr).toLocaleString("en-US", {
+      year: "numeric", month: "short", day: "numeric",
+      hour: "numeric", minute: "2-digit", hour12: true
+    })
   }
 
   // Format date nicely
@@ -362,6 +387,75 @@ function Profile(){
             </p>
           </div>
 
+        </div>
+
+        {/* ===== MY TEST DRIVES ===== */}
+        <div className={`mb-8 ${mounted ? 'animate-fade-up delay-300' : 'opacity-0'}`}>
+          <div className="section-eyebrow mb-5">My Test Drives</div>
+
+          {tdLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="loading-ring"/>
+            </div>
+          ) : testDrives.length === 0 ? (
+            <div className="glass-card rounded-2xl p-8 text-center">
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3" style={{background:'rgba(212,175,55,0.08)', border:'1px solid var(--border-gold)'}}>
+                <svg className="w-6 h-6" fill="var(--gold-primary)" viewBox="0 0 24 24">
+                  <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99z"/>
+                </svg>
+              </div>
+              <p className="text-sm font-medium mb-1" style={{color:'var(--text-secondary)'}}>No test drives yet</p>
+              <p className="text-xs" style={{color:'var(--text-muted)'}}>Browse cars and schedule your first test drive.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {testDrives.map(drive => {
+                const statusMap = {
+                  pending:   { color:'#D4AF37', bg:'rgba(212,175,55,0.1)',  border:'rgba(212,175,55,0.3)',  label:'Pending' },
+                  confirmed: { color:'#22c55e', bg:'rgba(34,197,94,0.1)',   border:'rgba(34,197,94,0.3)',   label:'Confirmed' },
+                  cancelled: { color:'#6b7280', bg:'rgba(107,114,128,0.1)', border:'rgba(107,114,128,0.25)', label:'Cancelled' },
+                }
+                const s = statusMap[drive.status] || statusMap.pending
+                return (
+                  <div key={drive.id} className="glass-card rounded-2xl p-5 flex items-center gap-5">
+                    {/* Car image */}
+                    {drive.cars?.image && (
+                      <div className="w-20 h-14 rounded-xl overflow-hidden flex-shrink-0" style={{border:'1px solid var(--border-subtle)'}}>
+                        <img src={drive.cars.image} alt="car" className="w-full h-full object-cover"/>
+                      </div>
+                    )}
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold truncate" style={{color:'var(--text-primary)'}}>
+                        {drive.cars?.brand} {drive.cars?.model}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <svg className="w-3.5 h-3.5" fill="var(--text-muted)" viewBox="0 0 24 24">
+                          <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/>
+                        </svg>
+                        <span className="text-xs" style={{color:'var(--text-muted)'}}>{formatDateTime(drive.date)}</span>
+                      </div>
+                    </div>
+                    {/* Status + cancel */}
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <span className="text-xs font-bold px-3 py-1.5 rounded-full" style={{background:s.bg, border:`1px solid ${s.border}`, color:s.color}}>
+                        {s.label}
+                      </span>
+                      {drive.status === 'pending' && (
+                        <button
+                          onClick={()=>handleCancelDrive(drive.id)}
+                          className="text-xs px-3 py-1.5 rounded-full transition-all duration-200"
+                          style={{background:'rgba(220,38,38,0.08)', border:'1px solid rgba(220,38,38,0.2)', color:'#EF4444'}}
+                          onMouseEnter={e=>{ e.currentTarget.style.background='rgba(220,38,38,0.18)'; e.currentTarget.style.borderColor='rgba(220,38,38,0.4)' }}
+                          onMouseLeave={e=>{ e.currentTarget.style.background='rgba(220,38,38,0.08)'; e.currentTarget.style.borderColor='rgba(220,38,38,0.2)' }}
+                        >Cancel</button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         {/* Sign Out */}

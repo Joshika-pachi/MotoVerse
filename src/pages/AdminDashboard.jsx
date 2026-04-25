@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react"
 import { supabase } from "../services/supabaseClient"
+import { getAllTestDrives } from "../services/testDriveService"
 
 function AdminDashboard(){
 
 const [users,setUsers] = useState([])
 const [cars,setCars] = useState([])
+const [testDrives,setTestDrives] = useState([])
+const [tdLoading,setTdLoading] = useState(false)
 
 useEffect(()=>{
 loadData()
@@ -28,6 +31,12 @@ return 0
 
 setUsers(sortedUsers)
 setCars(carData || [])
+
+// Load test drives
+setTdLoading(true)
+const { data: driveData } = await getAllTestDrives()
+setTestDrives(driveData || [])
+setTdLoading(false)
 }
 
 //////////////////////////////////////////////////////
@@ -193,21 +202,31 @@ className="bg-[#1A1A1A] border border-[#2A2A2A] px-3 py-1 rounded text-[#FFFFFF]
 <div className="flex gap-2">
 
 {user.role !== "admin" && (
-<>
-<button
-onClick={()=>changeUserRole(user.id,"customer")}
-className="bg-[#2A2A2A] text-[#FFFFFF] px-2 py-1 rounded text-sm hover:bg-[#FFD700] hover:text-[#0D0D0D] transition"
->
-Customer
-</button>
+  <>
+    <button
+      onClick={() => changeUserRole(user.id, "customer")}
+      disabled={user.role === "customer"}
+      className={`px-2 py-1 rounded text-sm transition ${
+        user.role === "customer"
+          ? "bg-[#FFD700] text-[#0D0D0D] font-semibold"
+          : "bg-[#2A2A2A] text-[#FFFFFF] hover:bg-[#FFD700] hover:text-[#0D0D0D]"
+      }`}
+    >
+      Customer
+    </button>
 
-<button
-onClick={()=>changeUserRole(user.id,"dealer")}
-className="bg-[#FFD700] text-[#0D0D0D] px-2 py-1 rounded text-sm hover:bg-[#FFD700] transition"
->
-Dealer
-</button>
-</>
+    <button
+      onClick={() => changeUserRole(user.id, "dealer")}
+      disabled={user.role === "dealer"}
+      className={`px-2 py-1 rounded text-sm transition ${
+        user.role === "dealer"
+          ? "bg-[#FFD700] text-[#0D0D0D] font-semibold"
+          : "bg-[#2A2A2A] text-[#FFFFFF] hover:bg-[#FFD700] hover:text-[#0D0D0D]"
+      }`}
+    >
+      Dealer
+    </button>
+  </>
 )}
 
 </div>
@@ -263,6 +282,51 @@ Delete
 ))}
 
 </div>
+
+{/* TEST DRIVES */}
+<h2 className="text-xl font-semibold mb-4 mt-10 text-[#FFFFFF]">Test Drive Requests</h2>
+
+{tdLoading ? (
+  <div className="flex justify-center py-8"><div className="loading-ring"/></div>
+) : testDrives.length === 0 ? (
+  <div className="bg-[#1A1A1A] rounded-xl p-8 text-center border border-[#2A2A2A]">
+    <p className="text-[#A0A0A0]">No test drive requests yet.</p>
+  </div>
+) : (
+  <div className="bg-[#1A1A1A] rounded-xl shadow-lg border border-[#2A2A2A] overflow-hidden">
+    <div className="grid grid-cols-4 bg-[#1F1F1F] p-3 font-medium text-[#A0A0A0] border-b border-[#2A2A2A] text-sm">
+      <p>Vehicle</p>
+      <p>Customer</p>
+      <p>Date &amp; Time</p>
+      <p>Status</p>
+    </div>
+    {testDrives.map(drive => {
+      const statusStyle = {
+        pending:   { color:'#D4AF37', bg:'rgba(212,175,55,0.12)',  label:'Pending' },
+        confirmed: { color:'#22c55e', bg:'rgba(34,197,94,0.12)',   label:'Confirmed' },
+        cancelled: { color:'#6b7280', bg:'rgba(107,114,128,0.1)', label:'Cancelled' },
+      }
+      const s = statusStyle[drive.status] || statusStyle.pending
+      return (
+        <div key={drive.id} className="grid grid-cols-4 p-3 border-t border-[#2A2A2A] items-center gap-2">
+          <p className="text-[#FFFFFF] text-sm font-medium">
+            {drive.cars?.brand} {drive.cars?.model}
+          </p>
+          <div>
+            <p className="text-[#FFFFFF] text-sm">{drive.users?.full_name || "—"}</p>
+            <p className="text-[#A0A0A0] text-xs truncate">{drive.users?.email || (drive.user_id ? drive.user_id.slice(0,8)+"…" : "Guest")}</p>
+          </div>
+          <p className="text-[#A0A0A0] text-sm">
+            {drive.date ? new Date(drive.date).toLocaleString("en-US",{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}) : "—"}
+          </p>
+          <span className="text-xs font-bold px-3 py-1 rounded-full inline-block" style={{background:s.bg, color:s.color}}>
+            {s.label}
+          </span>
+        </div>
+      )
+    })}
+  </div>
+)}
 
 </div>
 )

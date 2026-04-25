@@ -255,11 +255,9 @@ return(
       </div>
       <p className="text-xs" style={{color:'var(--text-muted)'}}>© 2026 MotoVerse. Premium Automotive Experience.</p>
       <div className="flex gap-6">
-        {['Privacy', 'Terms', 'Support'].map(l => (
-          <a key={l} href="#" className="text-xs transition hover:text-gold-light" style={{color:'var(--text-muted)'}}>
-            {l}
-          </a>
-        ))}
+        <Link to="/privacy" className="text-xs transition" style={{color:'var(--text-muted)'}} onMouseEnter={e=>e.target.style.color='var(--gold-primary)'} onMouseLeave={e=>e.target.style.color='var(--text-muted)'}>Privacy</Link>
+        <Link to="/terms" className="text-xs transition" style={{color:'var(--text-muted)'}} onMouseEnter={e=>e.target.style.color='var(--gold-primary)'} onMouseLeave={e=>e.target.style.color='var(--text-muted)'}>Terms</Link>
+        <Link to="/support" className="text-xs transition" style={{color:'var(--text-muted)'}} onMouseEnter={e=>e.target.style.color='var(--gold-primary)'} onMouseLeave={e=>e.target.style.color='var(--text-muted)'}>Support</Link>
       </div>
     </div>
   </footer>
