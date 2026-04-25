@@ -58,6 +58,8 @@ setCars(prev => prev.filter(car => car.id !== id))
 // DELETE USER
 //////////////////////////////////////////////////////
 
+
+
 async function deleteUser(id){
 
 const user = users.find(u => u.id === id)
@@ -115,24 +117,24 @@ window.location.reload()
 
 return(
 
-<div className="min-h-screen bg-gray-100 p-10">
+<div className="min-h-screen bg-[#0D0D0D] p-10">
 
 {/* TOP BAR */}
 <div className="flex justify-between items-center mb-10">
 
-<h1 className="text-3xl font-bold">
+<h1 className="text-3xl font-bold text-[#FFD700]">
 Admin Panel
 </h1>
 
 <div className="flex items-center gap-3">
 
-<p className="text-sm text-gray-500">
-Role: <span className="text-red-600 font-semibold">Admin</span>
+<p className="text-sm text-[#A0A0A0]">
+Role: <span className="text-[#FFD700] font-semibold">Admin</span>
 </p>
 
 <select
 onChange={(e)=>changeMyRole(e.target.value)}
-className="border px-3 py-1 rounded"
+className="bg-[#1A1A1A] border border-[#2A2A2A] px-3 py-1 rounded text-[#FFFFFF] focus:outline-none focus:border-[#FFD700]"
 >
 <option value="admin">Admin</option>
 <option value="dealer">Dealer</option>
@@ -146,19 +148,19 @@ className="border px-3 py-1 rounded"
 {/* STATS */}
 <div className="grid grid-cols-3 gap-6 mb-10">
 
-<div className="bg-white p-6 rounded-xl shadow">
-<p>Total Users</p>
-<p className="text-2xl font-bold">{users.length}</p>
+<div className="bg-[#1A1A1A] p-6 rounded-xl shadow-lg border border-[#2A2A2A]">
+<p className="text-[#A0A0A0]">Total Users</p>
+<p className="text-2xl font-bold text-[#FFD700]">{users.length}</p>
 </div>
 
-<div className="bg-white p-6 rounded-xl shadow">
-<p>Total Cars</p>
-<p className="text-2xl font-bold">{cars.length}</p>
+<div className="bg-[#1A1A1A] p-6 rounded-xl shadow-lg border border-[#2A2A2A]">
+<p className="text-[#A0A0A0]">Total Cars</p>
+<p className="text-2xl font-bold text-[#FFD700]">{cars.length}</p>
 </div>
 
-<div className="bg-white p-6 rounded-xl shadow">
-<p>Dealers</p>
-<p className="text-2xl font-bold">
+<div className="bg-[#1A1A1A] p-6 rounded-xl shadow-lg border border-[#2A2A2A]">
+<p className="text-[#A0A0A0]">Dealers</p>
+<p className="text-2xl font-bold text-[#FFD700]">
 {users.filter(u=>u.role==="dealer").length}
 </p>
 </div>
@@ -166,11 +168,11 @@ className="border px-3 py-1 rounded"
 </div>
 
 {/* USERS */}
-<h2 className="text-xl font-semibold mb-4">Manage Users</h2>
+<h2 className="text-xl font-semibold mb-4 text-[#FFFFFF]">Manage Users</h2>
 
-<div className="bg-white rounded-xl shadow mb-10">
+<div className="bg-[#1A1A1A] rounded-xl shadow-lg border border-[#2A2A2A]">
 
-<div className="grid grid-cols-4 bg-gray-100 p-3 font-medium">
+<div className="grid grid-cols-4 bg-[#1F1F1F] p-3 font-medium text-[#A0A0A0] border-b border-[#2A2A2A]">
 <p>Email</p>
 <p>Role</p>
 <p>Change Role</p>
@@ -178,13 +180,15 @@ className="border px-3 py-1 rounded"
 </div>
 
 {users.map(user=>(
-<div key={user.id} className="grid grid-cols-4 p-3 border-t items-center">
+<div key={user.id} className="grid grid-cols-4 p-3 border-t border-[#2A2A2A] items-center">
 
-<p>{user.email}</p>
+<p className="text-[#FFFFFF] truncate pr-2" title={user.email}>{user.email}</p>
 
-<p className={`capitalize ${user.role==="admin" ? "text-red-600 font-bold" : ""}`}>
+<p className={`capitalize ${user.role==="admin" ? "text-[#FFD700] font-bold" : "text-[#A0A0A0]"}`}>
 {user.role}
 </p>
+
+
 
 <div className="flex gap-2">
 
@@ -192,14 +196,14 @@ className="border px-3 py-1 rounded"
 <>
 <button
 onClick={()=>changeUserRole(user.id,"customer")}
-className="bg-gray-200 px-2 py-1 rounded text-sm"
+className="bg-[#2A2A2A] text-[#FFFFFF] px-2 py-1 rounded text-sm hover:bg-[#FFD700] hover:text-[#0D0D0D] transition"
 >
 Customer
 </button>
 
 <button
 onClick={()=>changeUserRole(user.id,"dealer")}
-className="bg-blue-500 text-white px-2 py-1 rounded text-sm"
+className="bg-[#FFD700] text-[#0D0D0D] px-2 py-1 rounded text-sm hover:bg-[#FFD700] transition"
 >
 Dealer
 </button>
@@ -212,7 +216,7 @@ Dealer
 {user.role !== "admin" && (
 <button
 onClick={()=>deleteUser(user.id)}
-className="bg-red-500 text-white px-3 py-1 rounded"
+className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition"
 >
 Delete
 </button>
@@ -225,28 +229,30 @@ Delete
 </div>
 
 {/* CARS */}
-<h2 className="text-xl font-semibold mb-4">Manage Cars</h2>
+<h2 className="text-xl font-semibold mb-4 text-[#FFFFFF]">Manage Cars</h2>
 
 <div className="grid md:grid-cols-3 gap-6">
 
 {cars.map(car=>(
-<div key={car.id} className="bg-white rounded-xl shadow overflow-hidden">
+<div key={car.id} className="bg-[#1A1A1A] rounded-xl shadow-lg overflow-hidden border border-[#2A2A2A]">
 
 <img src={car.image} className="w-full h-40 object-cover"/>
 
 <div className="p-4">
 
-<p className="font-semibold">
-{car.brand} {car.model}
-</p>
+<div className="flex justify-between items-start mb-1">
+  <p className="font-semibold text-[#FFFFFF]">
+    {car.brand} {car.model}
+  </p>
+</div>
 
-<p className="text-green-600 font-bold">
+<p className="text-[#FFD700] font-bold">
 ${car.price}
 </p>
 
 <button
 onClick={()=>deleteCar(car.id)}
-className="mt-3 bg-red-500 text-white px-3 py-1 rounded"
+className="bg-red-600 text-white px-3 py-1 rounded mt-3 hover:bg-red-700 transition"
 >
 Delete
 </button>

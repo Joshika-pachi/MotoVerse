@@ -20,6 +20,8 @@ useEffect(()=>{
 init()
 },[])
 
+
+
 useEffect(()=>{
 scrollToBottom()
 },[messages])
@@ -55,6 +57,9 @@ setRole(userData?.role)
 loadMessages(data.user)
 
 }
+
+//////////////////////////////////////////////////////
+
 
 //////////////////////////////////////////////////////
 // LOAD MESSAGES
@@ -100,17 +105,17 @@ loadMessages()
 
 return(
 
-<div className="min-h-screen bg-gray-100 flex flex-col">
+<div className="min-h-screen bg-[#0D0D0D] flex flex-col">
 
 {/* 🔥 HEADER */}
-<div className="bg-white shadow px-6 py-4 flex justify-between items-center">
+<div className="bg-[#1A1A1A] shadow px-6 py-4 flex justify-between items-center border-b border-[#2A2A2A]">
 
-<h1 className="text-lg font-semibold">
+<h1 className="text-lg font-semibold text-[#FFD700]">
 {role === "dealer" ? "📩 Dealer Inbox" : "💬 Chat with Dealer"}
 </h1>
 
 {carId && (
-<p className="text-sm text-gray-500">
+<p className="text-sm text-[#A0A0A0]">
 Car ID: {carId}
 </p>
 )}
@@ -120,54 +125,54 @@ Car ID: {carId}
 {/* 🔥 CHAT AREA */}
 <div className="flex-1 overflow-y-auto p-6 space-y-3">
 
-{messages.map(msg => {
+  {messages.map(msg => {
 
-const isMe = msg.sender_id === user?.id
+  const isMe = msg.sender_id === user?.id
 
-return(
-<div
-key={msg.id}
-className={`flex ${isMe ? "justify-end" : "justify-start"}`}
->
+  return(
+  <div
+  key={msg.id}
+  className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+  >
 
-<div
-className={`max-w-xs px-4 py-2 rounded-2xl text-sm shadow
-${isMe
-? "bg-blue-600 text-white rounded-br-none"
-: "bg-white text-gray-800 rounded-bl-none border"
-}`}
->
-{msg.message}
-</div>
+  <div
+  className={`max-w-xs px-4 py-2 rounded-2xl text-sm shadow
+  ${isMe
+  ? "bg-[#FFD700] text-[#0D0D0D] rounded-br-none font-medium"
+  : "bg-[#1A1A1A] text-[#FFFFFF] rounded-bl-none border border-[#2A2A2A]"
+  }`}
+  >
+  {msg.message}
+  </div>
 
-</div>
-)
-})}
+  </div>
+  )
+  })}
 
-<div ref={chatEndRef}></div>
+  <div ref={chatEndRef}></div>
 
-</div>
+  </div>
 
-{/* 🔥 INPUT BAR */}
-<form
-onSubmit={sendMessage}
-className="bg-white p-4 flex gap-3 border-t"
->
+  {/* 🔥 INPUT BAR */}
+  <form
+  onSubmit={sendMessage}
+  className="bg-[#1A1A1A] p-4 flex gap-3 border-t border-[#2A2A2A]"
+  >
 
-<input
-value={text}
-onChange={(e)=>setText(e.target.value)}
-placeholder="Type your message..."
-className="flex-1 border rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-/>
+  <input
+  value={text}
+  onChange={(e)=>setText(e.target.value)}
+  placeholder="Type your message..."
+  className="flex-1 bg-[#1F1F1F] border border-[#2A2A2A] rounded-full px-4 py-2 text-[#FFFFFF] placeholder-[#A0A0A0] focus:outline-none focus:border-[#FFD700] focus:ring-2 focus:ring-[rgba(255,215,0,0.2)]"
+  />
 
-<button
-className="bg-blue-600 text-white px-5 py-2 rounded-full hover:bg-blue-700 transition"
->
-Send
-</button>
+  <button
+  className="bg-[#FFD700] text-[#0D0D0D] px-5 py-2 rounded-full hover:bg-[#FFD700] hover:shadow-lg hover:shadow-[rgba(255,215,0,0.3)] transition font-semibold"
+  >
+  Send
+  </button>
 
-</form>
+  </form>
 
 </div>
 

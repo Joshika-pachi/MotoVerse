@@ -14,10 +14,12 @@ import AdminDashboard from "./pages/AdminDashboard"
 import Messages from "./pages/Messages"
 import Login from "./pages/Login"
 import Register from "./pages/Register"
+import Profile from "./pages/Profile"
 
 function App(){
 
 const [user,setUser] = useState(null)
+const [role,setRole] = useState(null)
 const [loading,setLoading] = useState(true)
 
 useEffect(()=>{
@@ -29,15 +31,31 @@ const { data } = await supabase.auth.getUser()
 
 if(data.user){
 setUser(data.user)
+
+// Fetch role from users table
+const { data: userData } = await supabase
+  .from("users")
+  .select("role")
+  .eq("id", data.user.id)
+  .single()
+
+setRole(userData?.role || "customer")
 }
 
 setLoading(false)
 }
 
+// Helper to get the home path for the current role
+function getRoleHome(){
+if(role === "admin") return "/admin"
+if(role === "dealer") return "/dealer"
+return "/"
+}
+
 //////////////////////////////////////////////////
 
 if(loading){
-return <div className="p-10">Loading...</div>
+return <div className="p-10 bg-[#0D0D0D] text-[#FFFFFF]">Loading...</div>
 }
 
 //////////////////////////////////////////////////
@@ -59,10 +77,13 @@ return(
 
 {/* CUSTOMER */}
 <Route path="/" element={<CustomerLayout/>}>
-<Route index element={<Home/>}/>
+<Route index element={
+  role === "customer" ? <Home/> : <Navigate to={getRoleHome()} replace />
+}/>
 <Route path="cars" element={<BrowseCars/>}/>
 <Route path="car/:id" element={<CarDetails/>}/>
 <Route path="messages" element={<Messages/>}/>
+<Route path="profile" element={<Profile/>}/>
 </Route>
 
 {/* DEALER */}
@@ -76,8 +97,8 @@ return(
 <Route index element={<AdminDashboard/>}/>
 </Route>
 
-{/* FALLBACK */}
-<Route path="*" element={<Navigate to="/" />} />
+{/* FALLBACK — redirect to role-appropriate dashboard */}
+<Route path="*" element={<Navigate to={getRoleHome()} replace />} />
 
 </Routes>
 )
